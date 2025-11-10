@@ -1,0 +1,36 @@
+name: mystep
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+  # (προαιρετικό αλλά χρήσιμο) Αν έχεις Flutter 3.22+:
+  # flutter: ">=3.22.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  pedometer: ^4.0.1
+  permission_handler: ^11.3.1
+  shared_preferences: ^2.3.2
+  intl: ^0.19.0
+  fl_chart: ^0.69.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+ 
+flutter:
+  uses-material-design: true
+  # Αν προσθέσεις assets στο μέλλον:
+  # assets:
+  #   - assets/
+  # Αν προσθέσεις custom fonts στο μέλλον:
+  # fonts:
+  #   - family: YourFont
+  #     fonts:
+  #       - asset: fonts/YourFont-Regular.ttf
