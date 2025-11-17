@@ -1,5 +1,4 @@
-// MyStep — Health (Fit/HC) bootstrap + live pedometer + profile + themes + water tab
-// UI: circular gauge + area chart + clean nav w/out selection pill
+// MyStep — same logic, full new UI (glow gauge, area chart, neon cards)
 
 import 'dart:async';
 import 'dart:math' as math;
@@ -120,14 +119,13 @@ class _ShellState extends State<Shell> {
         child: Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(26),
             child: NavigationBar(
-              height: 64,
+              height: 68,
               elevation: 1,
               surfaceTintColor: Colors.white,
-              backgroundColor: Colors.white.withValues(alpha: 0.95),
-              indicatorColor: Colors
-                  .transparent, // ⬅️ no green selection pill; clean, presentation-style
+              backgroundColor: Colors.white.withValues(alpha: 0.96),
+              indicatorColor: Colors.transparent, // no green pill
               selectedIndex: _index,
               onDestinationSelected: (i) => setState(() => _index = i),
               destinations: const [
@@ -336,7 +334,7 @@ class _StepsScreenState extends State<StepsScreen> {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final screenW = MediaQuery.of(context).size.width;
-    final ringSize = (screenW - 64).clamp(0.0, screenW); // λίγο μικρότερο για να 'αναπνέει'
+    final ringSize = (screenW - 64).clamp(0.0, screenW);
     final date = DateFormat('d MMM, y').format(DateTime.now());
 
     return Stack(
@@ -371,10 +369,25 @@ class _StepsScreenState extends State<StepsScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                /* ====== GAUGE + KPIs ====== */
-                Card(
-                  elevation: 6,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                // ====== GAUGE + KPIs ======
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.cyanAccent.withOpacity(0.45),
+                        blurRadius: 38,
+                        spreadRadius: -6,
+                        offset: const Offset(0, 14),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.06),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
                     child: Column(
@@ -382,13 +395,15 @@ class _StepsScreenState extends State<StepsScreen> {
                         SizedBox(
                           width: ringSize,
                           height: ringSize,
-                          child: _Gauge(
-                            value: _progress,           // 0..1
-                            steps: _todaySteps,
-                            goal: _goal,
-                            arcColor: const Color(0xFFFF2E95),
-                            bgArc: const Color(0xFFE6ECF5),
-                            disk: const Color(0xFF1E2A39),
+                          child: TweenAnimationBuilder<double>(
+                            duration: const Duration(milliseconds: 600),
+                            curve: Curves.easeOutCubic,
+                            tween: Tween(begin: 0, end: _progress),
+                            builder: (_, v, __) => _Gauge(
+                              value: v,
+                              steps: _todaySteps,
+                              goal: _goal,
+                            ),
                           ),
                         ),
                         const SizedBox(height: 16),
@@ -408,10 +423,19 @@ class _StepsScreenState extends State<StepsScreen> {
 
                 const SizedBox(height: 16),
 
-                /* ====== AREA CHART ====== */
-                Card(
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                // ====== AREA CHART (with Start Your Journey pill when empty) ======
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -428,10 +452,42 @@ class _StepsScreenState extends State<StepsScreen> {
                         const SizedBox(height: 12),
                         SizedBox(
                           height: 170,
-                          child: _AreaChart(
-                            values: _history,
-                            goal: _goal,
-                            color: primary,
+                          child: Stack(
+                            children: [
+                              _AreaChart(
+                                values: _history,
+                                goal: _goal,
+                                color: primary,
+                              ),
+                              if (_bestDay == 0)
+                                Align(
+                                  alignment: Alignment.topCenter,
+                                  child: Container(
+                                    margin: const EdgeInsets.only(top: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [Color(0xFF00E5FF), Color(0xFF00C4FF)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(999),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: const Color(0xFF00E5FF).withOpacity(0.6),
+                                          blurRadius: 20,
+                                          spreadRadius: -2,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Text(
+                                      'Start Your Journey!',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ],
@@ -441,10 +497,19 @@ class _StepsScreenState extends State<StepsScreen> {
 
                 const SizedBox(height: 16),
 
-                /* ====== ABOUT YOU ====== */
-                Card(
-                  elevation: 3,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                // ====== ABOUT YOU ======
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(28),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.04),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
@@ -506,8 +571,10 @@ class _StepsScreenState extends State<StepsScreen> {
       height: 64,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 4))],
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: const [
+          BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 4)),
+        ],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -555,13 +622,16 @@ class _GoalsScreenState extends State<GoalsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: const Text('Goals')),
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFFEAF6FF), Color(0xFFF9FBFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFE5F6FF), Color(0xFFCCF1FF)],
           ),
         ),
         child: FutureBuilder<int>(
@@ -573,39 +643,129 @@ class _GoalsScreenState extends State<GoalsScreen> {
             final loadedGoal = snap.data ?? 8000;
             if (_goalValue == 8000) _goalValue = loadedGoal;
 
-            return Padding(
-              padding: const EdgeInsets.all(16),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text('Daily step goal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
-                  const SizedBox(height: 8),
-                  _valueBadge('$_goalValue steps'),
-                  const SizedBox(height: 16),
-                  _presetChips(),
-                  const SizedBox(height: 8),
-                  Card(
-                    elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  const SizedBox(height: 10),
+
+                  // big glowing pill
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.cyanAccent.withOpacity(0.6),
+                          blurRadius: 30,
+                          spreadRadius: -2,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        '$_goalValue steps',
+                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  // secondary card (white)
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(26),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.06),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
                     child: Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Slider(
-                            value: _goalValue.toDouble(),
-                            min: 1000,
-                            max: 30000,
-                            divisions: 58,
-                            onChanged: (v) => setState(() => _goalValue = (v / 500).round() * 500),
+                          Text('Daily step goal', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                          const SizedBox(height: 6),
+                          Text('$_goalValue steps',
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                          const SizedBox(height: 16),
+                          _presetChips(),
+                          const SizedBox(height: 16),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(24),
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF005D9F), Color(0xFF00C4FF)],
+                              ),
+                            ),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: SliderTheme(
+                                data: SliderTheme.of(context).copyWith(
+                                  activeTrackColor: primary,
+                                  inactiveTrackColor: Colors.grey[300],
+                                  thumbColor: Colors.cyanAccent,
+                                  overlayColor: Colors.cyanAccent.withOpacity(0.3),
+                                ),
+                                child: Slider(
+                                  value: _goalValue.toDouble(),
+                                  min: 1000,
+                                  max: 30000,
+                                  divisions: 58,
+                                  onChanged: (v) => setState(() => _goalValue = (v / 500).round() * 500),
+                                ),
+                              ),
+                            ),
                           ),
-                          const SizedBox(height: 8),
-                          FilledButton(
-                            onPressed: () async {
-                              await _save(_goalValue);
-                              setState(() => _goalFuture = _loadGoal());
-                            },
-                            child: const Text('Save'),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFF00C4FF), Color(0xFF0066CC)],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.cyanAccent.withOpacity(0.6),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: FilledButton(
+                                style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.transparent,
+                                  shadowColor: Colors.transparent,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                                onPressed: () async {
+                                  await _save(_goalValue);
+                                  setState(() => _goalFuture = _loadGoal());
+                                },
+                                child: const Text('Save', style: TextStyle(fontSize: 18)),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -620,16 +780,6 @@ class _GoalsScreenState extends State<GoalsScreen> {
     );
   }
 
-  Widget _valueBadge(String s) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 4))],
-        ),
-        child: Text(s, textAlign: TextAlign.center, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
-      );
-
   Widget _presetChips() {
     final presets = [5000, 8000, 10000, 12000, 15000];
     return Wrap(
@@ -637,10 +787,39 @@ class _GoalsScreenState extends State<GoalsScreen> {
       runSpacing: 10,
       children: [
         for (final g in presets)
-          ChoiceChip(
-            label: Text('$g'),
-            selected: _goalValue == g,
-            onSelected: (sel) { if (sel) setState(() => _goalValue = g); },
+          GestureDetector(
+            onTap: () => setState(() => _goalValue = g),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(18),
+                color: _goalValue == g ? const Color(0xFFE2F7FF) : Colors.white,
+                boxShadow: _goalValue == g
+                    ? [
+                        BoxShadow(
+                          color: Colors.cyanAccent.withOpacity(0.6),
+                          blurRadius: 20,
+                          spreadRadius: -2,
+                          offset: const Offset(0, 4),
+                        ),
+                      ]
+                    : [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+              ),
+              child: Text(
+                '$g',
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: _goalValue == g ? Colors.blue[900] : Colors.grey[800],
+                ),
+              ),
+            ),
           ),
       ],
     );
@@ -698,60 +877,127 @@ class _WaterScreenState extends State<WaterScreen> {
     final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: const Text('Water')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Card(
-              elevation: 4,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text('$_count / $_goalCups cups', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
-                    const SizedBox(height: 10),
-                    LinearProgressIndicator(value: _progress),
-                    const SizedBox(height: 14),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: List.generate(_goalCups, (i) {
-                        final filled = i < _count;
-                        return GestureDetector(
-                          onTap: () => _toggleCup(i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            width: 42,
-                            height: 42,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: filled ? primary : Colors.white,
-                              border: Border.all(
-                                color: filled ? primary.withValues(alpha: 0.7) : Colors.grey.withValues(alpha: 0.4),
-                              ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.06),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 3),
-                                )
-                              ],
-                            ),
-                            child: Icon(filled ? Icons.water_drop : Icons.water_drop_outlined,
-                                size: 24, color: filled ? Colors.white : Colors.grey[700]),
-                          ),
-                        );
-                      }),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFE5F6FF), Color(0xFFBBE9FF)],
+          ),
+        ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.cyanAccent.withOpacity(0.4),
+                      blurRadius: 30,
+                      spreadRadius: -4,
+                      offset: const Offset(0, 12),
+                    ),
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
+                  child: Column(
+                    children: [
+                      Text('$_count / $_goalCups cups',
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 10),
+                      Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.grey[300],
+                          borderRadius: BorderRadius.circular(999),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: _progress.clamp(0, 1),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [primary, primary.withOpacity(0.5)],
+                              ),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.center,
+                        children: List.generate(_goalCups, (i) {
+                          final filled = i < _count;
+                          return GestureDetector(
+                            onTap: () => _toggleCup(i),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              width: 50,
+                              height: 50,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: filled
+                                    ? const LinearGradient(
+                                        colors: [Color(0xFF005D9F), Color(0xFF00C4FF)],
+                                      )
+                                    : const LinearGradient(
+                                        colors: [Colors.white, Colors.white],
+                                      ),
+                                border: Border.all(
+                                  color: filled
+                                      ? Colors.cyanAccent.withOpacity(0.8)
+                                      : Colors.grey.withOpacity(0.3),
+                                ),
+                                boxShadow: filled
+                                    ? [
+                                        BoxShadow(
+                                          color: Colors.cyanAccent.withOpacity(0.7),
+                                          blurRadius: 20,
+                                          offset: const Offset(0, 8),
+                                        ),
+                                      ]
+                                    : [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.05),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                              ),
+                              child: Icon(
+                                filled ? Icons.water_drop : Icons.water_drop_outlined,
+                                size: 26,
+                                color: filled ? Colors.white : Colors.grey[700],
+                              ),
+                            ),
+                          );
+                        }),
+                      ),
+                    ],
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text('Tip: stay hydrated throughout the day.', textAlign: TextAlign.center, style: TextStyle(color: Colors.grey[700])),
-          ],
+              const SizedBox(height: 24),
+              Text(
+                'Tip: stay hydrated throughout the day.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey[700]),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -787,7 +1033,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final p = await SharedPreferences.getInstance();
     _weight = p.getDouble(_kWeight) ?? 70;
 
-    // normalize height to cm (fix old meters values)
     final savedH = p.getDouble(_kHeight);
     if (savedH == null) {
       _heightCm = 175;
@@ -860,7 +1105,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   const SizedBox(height: 8),
                   FilledButton(
-                    onPressed: () { onChanged(temp); Navigator.pop(ctx); },
+                    onPressed: () {
+                      onChanged(temp);
+                      Navigator.pop(ctx);
+                    },
                     child: const Text('Select'),
                   ),
                   const SizedBox(height: 8),
@@ -884,8 +1132,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft, end: Alignment.bottomRight,
-            colors: [Color(0xFFEAF6FF), Color(0xFFF9FBFF)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [Color(0xFFF1F7FF), Color(0xFFE0F1FF)],
           ),
         ),
         child: SingleChildScrollView(
@@ -895,7 +1144,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             children: [
               _sectionTitle('Profile'),
               const SizedBox(height: 8),
-              _card(
+              _glowCard(
                 child: Column(
                   children: [
                     _pickerTile(
@@ -938,7 +1187,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: FilledButton(onPressed: _saveProfile, child: const Text('Save profile')),
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(48),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          backgroundColor: const Color(0xFF005D9F),
+                        ),
+                        onPressed: _saveProfile,
+                        child: const Text('Save profile', style: TextStyle(fontSize: 16)),
+                      ),
                     ),
                   ],
                 ),
@@ -953,7 +1210,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Wrap(
-                      spacing: 12,
+                      spacing: 14,
                       runSpacing: 12,
                       children: List.generate(colors.length, (i) {
                         final selected = i == widget.themeController.index;
@@ -961,23 +1218,37 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           onTap: () => widget.themeController.setIndex(i),
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 200),
-                            width: 42, height: 42,
+                            width: 48,
+                            height: 48,
                             decoration: BoxDecoration(
                               color: colors[i],
                               shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.08), blurRadius: 10, offset: const Offset(0, 4))],
-                              border: Border.all(
-                                color: selected ? Colors.black.withValues(alpha: 0.35) : Colors.white,
-                                width: selected ? 2.2 : 1.0,
-                              ),
+                              boxShadow: selected
+                                  ? [
+                                      BoxShadow(
+                                        color: colors[i].withOpacity(0.8),
+                                        blurRadius: 22,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ]
+                                  : [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
                             ),
-                            child: selected ? const Icon(Icons.check, color: Colors.white) : null,
+                            child: selected
+                                ? const Icon(Icons.check, color: Colors.white, size: 24)
+                                : null,
                           ),
                         );
                       }),
                     ),
                     const SizedBox(height: 12),
-                    Text('Pick one of 5 colors to personalize the app.', style: TextStyle(color: Colors.grey[700])),
+                    Text('Pick one of 5 colors to personalize the app.',
+                        style: TextStyle(color: Colors.grey[700])),
                   ],
                 ),
               ),
@@ -991,6 +1262,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     ListTile(
+                      contentPadding: EdgeInsets.zero,
                       leading: const Icon(Icons.water_drop_outlined),
                       title: const Text('Daily water goal'),
                       subtitle: Text('$_waterGoal cups'),
@@ -1003,7 +1275,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    FilledButton(onPressed: _saveProfile, child: const Text('Save water goal')),
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(44),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        ),
+                        onPressed: _saveProfile,
+                        child: const Text('Save water goal'),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1024,26 +1306,64 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionTitle(String s) => Text(s, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800));
-  Widget _card({required Widget child}) => Card(elevation: 4, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)), child: Padding(padding: const EdgeInsets.all(16), child: child));
+  Widget _sectionTitle(String s) =>
+      Text(s, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800));
+
+  Widget _card({required Widget child}) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(26),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(padding: const EdgeInsets.all(16), child: child),
+      );
+
+  Widget _glowCard({required Widget child}) => Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.cyanAccent.withOpacity(0.5),
+              blurRadius: 40,
+              spreadRadius: -6,
+              offset: const Offset(0, 18),
+            ),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.06),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Padding(padding: const EdgeInsets.all(16), child: child),
+      );
 
   Widget _genderPicker() {
     final items = const ['—', 'Male', 'Female', 'Other'];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Padding(padding: EdgeInsets.only(left: 16, top: 8, bottom: 6), child: Text('Gender', style: TextStyle(fontWeight: FontWeight.w700))),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: DropdownButtonFormField<String>(
-            value: _gender,
-            items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-            onChanged: (v) => setState(() => _gender = v ?? '—'),
-            decoration: InputDecoration(
-              filled: true, fillColor: Colors.white,
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
-              isDense: true,
-            ),
+        const Padding(
+          padding: EdgeInsets.only(left: 12, top: 8, bottom: 6),
+          child: Text('Gender', style: TextStyle(fontWeight: FontWeight.w700)),
+        ),
+        DropdownButtonFormField<String>(
+          value: _gender,
+          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: (v) => setState(() => _gender = v ?? '—'),
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
+            isDense: true,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           ),
         ),
       ],
@@ -1057,30 +1377,37 @@ class _Gauge extends StatelessWidget {
   final double value; // 0..1
   final int steps;
   final int goal;
-  final Color arcColor;
-  final Color bgArc;
-  final Color disk;
   const _Gauge({
     required this.value,
     required this.steps,
     required this.goal,
-    required this.arcColor,
-    required this.bgArc,
-    required this.disk,
   });
 
   @override
   Widget build(BuildContext context) {
     return CustomPaint(
-      painter: _GaugePainter(value: value, arcColor: arcColor, bgArc: bgArc, disk: disk),
+      painter: _GaugePainter(value: value),
       child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text('$steps', style: const TextStyle(color: Colors.white, fontSize: 56, fontWeight: FontWeight.w900)),
+            Text(
+              '$steps',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 56,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text('${(value * 100).round()}% of $goal',
-                style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w600)),
+            Text(
+              '${(value * 100).round()}% of $goal',
+              style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ],
         ),
       ),
@@ -1090,51 +1417,73 @@ class _Gauge extends StatelessWidget {
 
 class _GaugePainter extends CustomPainter {
   final double value;
-  final Color arcColor;
-  final Color bgArc;
-  final Color disk;
-  _GaugePainter({required this.value, required this.arcColor, required this.bgArc, required this.disk});
+  _GaugePainter({required this.value});
 
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
-    final radius = size.shortestSide / 2 - 8;
+    final radius = size.shortestSide / 2 - 10;
+
+    final outerRadius = radius;
+    final diskR = radius * 0.8;
+
+    // glow ring
+    final glowPaint = Paint()
+      ..color = const Color(0xFF00E5FF).withOpacity(0.6)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 18
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22);
+    canvas.drawCircle(center, outerRadius - 8, glowPaint);
+
+    // background outer ring
+    final bgPaint = Paint()
+      ..color = const Color(0xFFE0F2FF)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round;
+    final arcRect = Rect.fromCircle(center: center, radius: outerRadius - 8);
+    final start = -math.pi * 0.5;
+    canvas.drawArc(arcRect, start, math.pi * 2, false, bgPaint);
+
+    // progress ring
+    final fgPaint = Paint()
+      ..shader = const LinearGradient(
+        colors: [Color(0xFF00E5FF), Color(0xFF00C4FF)],
+      ).createShader(arcRect)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 14
+      ..strokeCap = StrokeCap.round;
+    canvas.drawArc(arcRect, start, (math.pi * 2) * value, false, fgPaint);
+
+    // little ticks/foot-like dots
+    final stepsCount = 40;
+    final tickR = outerRadius + 2;
+    final dotPaint = Paint()
+      ..color = const Color(0xFF00E5FF)
+      ..style = PaintingStyle.fill;
+    for (int i = 0; i < stepsCount; i++) {
+      final angle = start + (math.pi * 2) * (i / stepsCount);
+      final dx = center.dx + tickR * math.cos(angle);
+      final dy = center.dy + tickR * math.sin(angle);
+      canvas.drawCircle(Offset(dx, dy), 3.2, dotPaint);
+    }
 
     // inner dark disk
-    final diskR = radius * 0.78;
-    final diskPaint = Paint()..color = disk..style = PaintingStyle.fill;
+    final diskPaint = Paint()
+      ..color = const Color(0xFF1E2A39)
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(center, diskR, diskPaint);
 
-    // background arc
-    final stroke = radius * 0.18;
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final start = -math.pi * 0.5; // from top
-    final bg = Paint()
-      ..color = bgArc
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, start, math.pi * 2, false, bg);
-
-    // foreground arc
-    final fg = Paint()
-      ..color = arcColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = stroke
-      ..strokeCap = StrokeCap.round;
-    canvas.drawArc(rect, start, (math.pi * 2) * value, false, fg);
-
-    // slight light ring on disk
+    // subtle rim
     final rim = Paint()
-      ..color = Colors.white.withOpacity(0.06)
+      ..color = Colors.white.withOpacity(0.08)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.0;
     canvas.drawCircle(center, diskR, rim);
   }
 
   @override
-  bool shouldRepaint(covariant _GaugePainter old) =>
-      old.value != value || old.arcColor != arcColor || old.bgArc != bgArc || old.disk != disk;
+  bool shouldRepaint(covariant _GaugePainter old) => old.value != value;
 }
 
 class _AreaChart extends StatelessWidget {
@@ -1186,13 +1535,13 @@ class _AreaChart extends StatelessWidget {
           HorizontalLine(
             y: goal.toDouble(),
             strokeWidth: 2,
-            color: Colors.amber[700]!.withOpacity(0.9),
+            color: Colors.orangeAccent.withOpacity(0.9),
             dashArray: const [6, 6],
             label: HorizontalLineLabel(
               show: true,
               alignment: Alignment.topRight,
               labelResolver: (_) => 'Goal',
-              style: TextStyle(color: Colors.amber[800]),
+              style: const TextStyle(color: Colors.orange),
             ),
           ),
         ]),
@@ -1208,7 +1557,7 @@ class _AreaChart extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [color.withOpacity(0.35), color.withOpacity(0.08)],
+                colors: [color.withOpacity(0.35), color.withOpacity(0.05)],
               ),
             ),
             dotData: FlDotData(
@@ -1227,8 +1576,8 @@ class _AreaChart extends StatelessWidget {
   }
 }
 
-/* ============================ RING PAINTER (legacy, unused by gauge) ============================ */
-// (διατηρώ αν το θέλεις αλλού)
+/* ============================ OLD RING PAINTER (kept if needed) ============================ */
+
 class _RingPainter extends CustomPainter {
   final double progress; // 0..1
   final Color bgColor;
