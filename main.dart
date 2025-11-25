@@ -63,10 +63,19 @@ ThemeData appTheme(Color seed) {
     useMaterial3: true,
     brightness: Brightness.light,
     scaffoldBackgroundColor: AppColors.bg,
-    colorScheme: ColorScheme.fromSeed(seedColor: seed, brightness: Brightness.light),
+    colorScheme: ColorScheme.fromSeed(
+      seedColor: seed,
+      brightness: Brightness.light,
+    ),
     textTheme: const TextTheme(
-      headlineLarge: TextStyle(fontWeight: FontWeight.w900, color: AppColors.text),
-      headlineMedium: TextStyle(fontWeight: FontWeight.w800, color: AppColors.text),
+      headlineLarge: TextStyle(
+        fontWeight: FontWeight.w900,
+        color: AppColors.text,
+      ),
+      headlineMedium: TextStyle(
+        fontWeight: FontWeight.w800,
+        color: AppColors.text,
+      ),
       titleLarge: TextStyle(fontWeight: FontWeight.w800, color: AppColors.text),
       bodyMedium: TextStyle(color: Color(0xFF425466)),
     ),
@@ -166,7 +175,7 @@ const _kGoal = 'daily_goal';
 const _kHistory = 'history_7';
 
 const _kWeight = 'user_weight_kg'; // kg
-const _kHeight = 'user_height_cm';  // ΠΑΝΤΑ σε cm
+const _kHeight = 'user_height_cm'; // ΠΑΝΤΑ σε cm
 const _kGender = 'user_gender';
 const _kAge = 'user_age_years';
 
@@ -222,7 +231,10 @@ class _StepsScreenState extends State<StepsScreen> {
       if (!ar.isGranted) return;
 
       await health.configure();
-      final ok = await health.requestAuthorization(_hcTypes, permissions: _hcPerms);
+      final ok = await health.requestAuthorization(
+        _hcTypes,
+        permissions: _hcPerms,
+      );
       if (!ok) return;
 
       final now = DateTime.now();
@@ -258,7 +270,10 @@ class _StepsScreenState extends State<StepsScreen> {
   Future<void> _saveTodayToHistory(int todayCount) async {
     final p = await SharedPreferences.getInstance();
     _history = [..._history.skip(1), todayCount];
-    await p.setStringList(_kHistory, _history.map((e) => e.toString()).toList());
+    await p.setStringList(
+      _kHistory,
+      _history.map((e) => e.toString()).toList(),
+    );
   }
 
   Future<void> _initPedometer() async {
@@ -269,53 +284,59 @@ class _StepsScreenState extends State<StepsScreen> {
     }
     final prefs = await SharedPreferences.getInstance();
 
-    _stepSub = Pedometer.stepCountStream.listen((event) async {
-      final current = event.steps;
-      final todayStr = _todayStr;
-      var savedDate = prefs.getString(_kDate);
-      var baseline = prefs.getInt(_kBaseline);
+    _stepSub = Pedometer.stepCountStream.listen(
+      (event) async {
+        final current = event.steps;
+        final todayStr = _todayStr;
+        var savedDate = prefs.getString(_kDate);
+        var baseline = prefs.getInt(_kBaseline);
 
-      if (savedDate != todayStr || baseline == null) {
-        if (baseline != null && savedDate != null) {
-          final yesterdayCount = (current - baseline).clamp(0, 1 << 31);
-          await _saveTodayToHistory(yesterdayCount);
+        if (savedDate != todayStr || baseline == null) {
+          if (baseline != null && savedDate != null) {
+            final yesterdayCount = (current - baseline).clamp(0, 1 << 31);
+            await _saveTodayToHistory(yesterdayCount);
+          }
+          await prefs.setString(_kDate, todayStr);
+          await prefs.setInt(_kBaseline, current);
+          baseline = current;
         }
-        await prefs.setString(_kDate, todayStr);
-        await prefs.setInt(_kBaseline, current);
-        baseline = current;
-      }
 
-      final todayLive = (current - baseline).clamp(0, 1 << 31);
+        final todayLive = (current - baseline).clamp(0, 1 << 31);
 
-      if (!mounted) return;
-      setState(() {
-        _todaySteps = _primedFromHealth
-            ? (todayLive > _todaySteps ? todayLive : _todaySteps)
-            : todayLive;
+        if (!mounted) return;
+        setState(() {
+          _todaySteps = _primedFromHealth
+              ? (todayLive > _todaySteps ? todayLive : _todaySteps)
+              : todayLive;
 
-        if (!_hitGoalPulse && _todaySteps >= _goal) {
-          _hitGoalPulse = true;
-          Future.delayed(const Duration(milliseconds: 1600), () {
-            if (mounted) setState(() => _hitGoalPulse = false);
-          });
-        }
-      });
-    }, onError: (e) {
-      if (mounted) setState(() => _error = 'Step stream error: $e');
-    });
+          if (!_hitGoalPulse && _todaySteps >= _goal) {
+            _hitGoalPulse = true;
+            Future.delayed(const Duration(milliseconds: 1600), () {
+              if (mounted) setState(() => _hitGoalPulse = false);
+            });
+          }
+        });
+      },
+      onError: (e) {
+        if (mounted) setState(() => _error = 'Step stream error: $e');
+      },
+    );
 
-    _statusSub = Pedometer.pedestrianStatusStream.listen((s) {
-      if (!mounted) return;
-      setState(() {
-        _status = switch (s.status) {
-          'walking' => 'Walking',
-          'stopped' => 'Stopped',
-          _ => '—'
-        };
-      });
-    }, onError: (e) {
-      if (mounted) setState(() => _error = 'Status stream error: $e');
-    });
+    _statusSub = Pedometer.pedestrianStatusStream.listen(
+      (s) {
+        if (!mounted) return;
+        setState(() {
+          _status = switch (s.status) {
+            'walking' => 'Walking',
+            'stopped' => 'Stopped',
+            _ => '—',
+          };
+        });
+      },
+      onError: (e) {
+        if (mounted) setState(() => _error = 'Status stream error: $e');
+      },
+    );
   }
 
   @override
@@ -358,7 +379,10 @@ class _StepsScreenState extends State<StepsScreen> {
             title: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Let’s move!', style: Theme.of(context).textTheme.titleLarge),
+                Text(
+                  'Let’s move!',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
                 const SizedBox(height: 2),
                 Text(date, style: Theme.of(context).textTheme.bodyMedium),
               ],
@@ -409,11 +433,26 @@ class _StepsScreenState extends State<StepsScreen> {
                         const SizedBox(height: 16),
                         Row(
                           children: [
-                            Expanded(child: _kpiTile(Icons.local_fire_department, '${_kcal.toStringAsFixed(0)} kcal')),
+                            Expanded(
+                              child: _kpiTile(
+                                Icons.local_fire_department,
+                                '${_kcal.toStringAsFixed(0)} kcal',
+                              ),
+                            ),
                             const SizedBox(width: 10),
-                            Expanded(child: _kpiTile(Icons.route_outlined, '${_km.toStringAsFixed(2)} km')),
+                            Expanded(
+                              child: _kpiTile(
+                                Icons.route_outlined,
+                                '${_km.toStringAsFixed(2)} km',
+                              ),
+                            ),
                             const SizedBox(width: 10),
-                            Expanded(child: _kpiTile(Icons.timer_outlined, '${(_todaySteps / 100).toStringAsFixed(0)} min')),
+                            Expanded(
+                              child: _kpiTile(
+                                Icons.timer_outlined,
+                                '${(_todaySteps / 100).toStringAsFixed(0)} min',
+                              ),
+                            ),
                           ],
                         ),
                       ],
@@ -444,7 +483,10 @@ class _StepsScreenState extends State<StepsScreen> {
                         Row(
                           children: [
                             const Expanded(
-                              child: Text('Last 7 days', style: TextStyle(fontWeight: FontWeight.w800)),
+                              child: Text(
+                                'Last 7 days',
+                                style: TextStyle(fontWeight: FontWeight.w800),
+                              ),
                             ),
                             _bestChip(_bestDay),
                           ],
@@ -464,15 +506,23 @@ class _StepsScreenState extends State<StepsScreen> {
                                   alignment: Alignment.topCenter,
                                   child: Container(
                                     margin: const EdgeInsets.only(top: 8),
-                                    padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 22,
+                                      vertical: 10,
+                                    ),
                                     decoration: BoxDecoration(
                                       gradient: const LinearGradient(
-                                        colors: [Color(0xFF00E5FF), Color(0xFF00C4FF)],
+                                        colors: [
+                                          Color(0xFF00E5FF),
+                                          Color(0xFF00C4FF),
+                                        ],
                                       ),
                                       borderRadius: BorderRadius.circular(999),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: const Color(0xFF00E5FF).withOpacity(0.6),
+                                          color: const Color(
+                                            0xFF00E5FF,
+                                          ).withOpacity(0.6),
                                           blurRadius: 20,
                                           spreadRadius: -2,
                                         ),
@@ -515,10 +565,26 @@ class _StepsScreenState extends State<StepsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('About you', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                        const Text(
+                          'About you',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                         const SizedBox(height: 12),
-                        _aboutRow('Height', _heightCm > 0 ? '${_heightCm.toStringAsFixed(0)} cm' : '—'),
-                        _aboutRow('Weight', _weight > 0 ? '${_weight.toStringAsFixed(0)} kg' : '—'),
+                        _aboutRow(
+                          'Height',
+                          _heightCm > 0
+                              ? '${_heightCm.toStringAsFixed(0)} cm'
+                              : '—',
+                        ),
+                        _aboutRow(
+                          'Weight',
+                          _weight > 0
+                              ? '${_weight.toStringAsFixed(0)} kg'
+                              : '—',
+                        ),
                         _aboutRow('Age', _age > 0 ? '$_age' : '—'),
                         _aboutRow('Gender', _gender),
                       ],
@@ -539,32 +605,41 @@ class _StepsScreenState extends State<StepsScreen> {
   }
 
   Widget _bestChip(int best) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: const [BoxShadow(color: Color(0x11000000), blurRadius: 8, offset: Offset(0, 4))],
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(20),
+      boxShadow: const [
+        BoxShadow(
+          color: Color(0x11000000),
+          blurRadius: 8,
+          offset: Offset(0, 4),
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.emoji_events_outlined, size: 16),
-            const SizedBox(width: 6),
-            Text('Best: $best'),
-          ],
-        ),
-      );
+      ],
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.emoji_events_outlined, size: 16),
+        const SizedBox(width: 6),
+        Text('Best: $best'),
+      ],
+    ),
+  );
 
   Widget _aboutRow(String k, String v) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 6),
-        child: Row(
-          children: [
-            SizedBox(width: 90, child: Text(k, style: const TextStyle(fontWeight: FontWeight.w700))),
-            const SizedBox(width: 12),
-            Expanded(child: Text(v)),
-          ],
+    padding: const EdgeInsets.symmetric(vertical: 6),
+    child: Row(
+      children: [
+        SizedBox(
+          width: 90,
+          child: Text(k, style: const TextStyle(fontWeight: FontWeight.w700)),
         ),
-      );
+        const SizedBox(width: 12),
+        Expanded(child: Text(v)),
+      ],
+    ),
+  );
 
   Widget _kpiTile(IconData icon, String text) {
     return Container(
@@ -573,7 +648,11 @@ class _StepsScreenState extends State<StepsScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
         boxShadow: const [
-          BoxShadow(color: Color(0x11000000), blurRadius: 10, offset: Offset(0, 4)),
+          BoxShadow(
+            color: Color(0x11000000),
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
         ],
       ),
       child: Row(
@@ -615,9 +694,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
     final p = await SharedPreferences.getInstance();
     await p.setInt(_kGoal, v);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Saved daily goal')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Saved daily goal')));
   }
 
   @override
@@ -648,12 +727,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Daily step goal', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  const Text(
+                    'Daily step goal',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                  ),
                   const SizedBox(height: 10),
 
                   // big glowing pill
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 18,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(26),
@@ -669,7 +754,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                     child: Center(
                       child: Text(
                         '$_goalValue steps',
-                        style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900),
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w900,
+                        ),
                       ),
                     ),
                   ),
@@ -694,16 +782,30 @@ class _GoalsScreenState extends State<GoalsScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text('Daily step goal', style: TextStyle(fontSize: 14, color: Colors.grey[700])),
+                          Text(
+                            'Daily step goal',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[700],
+                            ),
+                          ),
                           const SizedBox(height: 6),
-                          Text('$_goalValue steps',
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800)),
+                          Text(
+                            '$_goalValue steps',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                           _presetChips(),
                           const SizedBox(height: 16),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 8,
+                            ),
                             decoration: BoxDecoration(
                               borderRadius: BorderRadius.circular(24),
                               gradient: const LinearGradient(
@@ -711,7 +813,9 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               ),
                             ),
                             child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(20),
@@ -721,14 +825,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                   activeTrackColor: primary,
                                   inactiveTrackColor: Colors.grey[300],
                                   thumbColor: Colors.cyanAccent,
-                                  overlayColor: Colors.cyanAccent.withOpacity(0.3),
+                                  overlayColor: Colors.cyanAccent.withOpacity(
+                                    0.3,
+                                  ),
                                 ),
                                 child: Slider(
                                   value: _goalValue.toDouble(),
                                   min: 1000,
                                   max: 30000,
                                   divisions: 58,
-                                  onChanged: (v) => setState(() => _goalValue = (v / 500).round() * 500),
+                                  onChanged: (v) => setState(
+                                    () => _goalValue = (v / 500).round() * 500,
+                                  ),
                                 ),
                               ),
                             ),
@@ -740,7 +848,10 @@ class _GoalsScreenState extends State<GoalsScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(24),
                                 gradient: const LinearGradient(
-                                  colors: [Color(0xFF00C4FF), Color(0xFF0066CC)],
+                                  colors: [
+                                    Color(0xFF00C4FF),
+                                    Color(0xFF0066CC),
+                                  ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
@@ -757,13 +868,18 @@ class _GoalsScreenState extends State<GoalsScreen> {
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(24),
                                   ),
-                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                  ),
                                 ),
                                 onPressed: () async {
                                   await _save(_goalValue);
                                   setState(() => _goalFuture = _loadGoal());
                                 },
-                                child: const Text('Save', style: TextStyle(fontSize: 18)),
+                                child: const Text(
+                                  'Save',
+                                  style: TextStyle(fontSize: 18),
+                                ),
                               ),
                             ),
                           ),
@@ -829,6 +945,8 @@ class _GoalsScreenState extends State<GoalsScreen> {
 /* ============================ WATER SCREEN (tab) ============================ */
 
 class WaterScreen extends StatefulWidget {
+  const WaterScreen({super.key});
+
   @override
   State<WaterScreen> createState() => _WaterScreenState();
 }
@@ -912,8 +1030,13 @@ class _WaterScreenState extends State<WaterScreen> {
                   padding: const EdgeInsets.fromLTRB(18, 16, 18, 18),
                   child: Column(
                     children: [
-                      Text('$_count / $_goalCups cups',
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      Text(
+                        '$_count / $_goalCups cups',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                       const SizedBox(height: 10),
                       Container(
                         height: 4,
@@ -951,7 +1074,10 @@ class _WaterScreenState extends State<WaterScreen> {
                                 shape: BoxShape.circle,
                                 gradient: filled
                                     ? const LinearGradient(
-                                        colors: [Color(0xFF005D9F), Color(0xFF00C4FF)],
+                                        colors: [
+                                          Color(0xFF005D9F),
+                                          Color(0xFF00C4FF),
+                                        ],
                                       )
                                     : const LinearGradient(
                                         colors: [Colors.white, Colors.white],
@@ -964,7 +1090,9 @@ class _WaterScreenState extends State<WaterScreen> {
                                 boxShadow: filled
                                     ? [
                                         BoxShadow(
-                                          color: Colors.cyanAccent.withOpacity(0.7),
+                                          color: Colors.cyanAccent.withOpacity(
+                                            0.7,
+                                          ),
                                           blurRadius: 20,
                                           offset: const Offset(0, 8),
                                         ),
@@ -978,7 +1106,9 @@ class _WaterScreenState extends State<WaterScreen> {
                                       ],
                               ),
                               child: Icon(
-                                filled ? Icons.water_drop : Icons.water_drop_outlined,
+                                filled
+                                    ? Icons.water_drop
+                                    : Icons.water_drop_outlined,
                                 size: 26,
                                 color: filled ? Colors.white : Colors.grey[700],
                               ),
@@ -1015,7 +1145,7 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  double _weight = 70;   // kg
+  double _weight = 70; // kg
   double _heightCm = 175; // cm ΠΑΝΤΑ
   String _gender = '—';
   int _age = 25;
@@ -1060,7 +1190,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await p.setInt(_kAge, _age);
     await p.setInt(_kWaterGoalCups, _waterGoal);
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Saved profile')));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Saved profile')));
   }
 
   Future<void> _openSliderSheet({
@@ -1088,12 +1220,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
             return Padding(
               padding: EdgeInsets.only(
                 bottom: MediaQuery.of(ctx).viewInsets.bottom + 16,
-                left: 16, right: 16, top: 12,
+                left: 16,
+                right: 16,
+                top: 12,
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text('${temp.toStringAsFixed(0)} $unit'),
                   Slider(
@@ -1125,7 +1265,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final colors = widget.themeController.seeds;
-    if (_loading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    if (_loading) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     return Scaffold(
       appBar: AppBar(title: const Text('Settings'), centerTitle: true),
@@ -1153,8 +1295,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.monitor_weight_outlined,
                       onTap: () => _openSliderSheet(
                         title: 'Select Weight',
-                        min: 30, max: 200, divisions: 170,
-                        initial: _weight, unit: 'kg',
+                        min: 30,
+                        max: 200,
+                        divisions: 170,
+                        initial: _weight,
+                        unit: 'kg',
                         onChanged: (v) => _weight = v.roundToDouble(),
                       ),
                     ),
@@ -1165,8 +1310,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.height,
                       onTap: () => _openSliderSheet(
                         title: 'Select Height',
-                        min: 120, max: 220, divisions: 100,
-                        initial: _heightCm, unit: 'cm',
+                        min: 120,
+                        max: 220,
+                        divisions: 100,
+                        initial: _heightCm,
+                        unit: 'cm',
                         onChanged: (v) => _heightCm = v.roundToDouble(),
                       ),
                     ),
@@ -1177,8 +1325,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       icon: Icons.cake_outlined,
                       onTap: () => _openSliderSheet(
                         title: 'Select Age',
-                        min: 10, max: 100, divisions: 90,
-                        initial: _age.toDouble(), unit: 'years',
+                        min: 10,
+                        max: 100,
+                        divisions: 90,
+                        initial: _age.toDouble(),
+                        unit: 'years',
                         onChanged: (v) => _age = v.round(),
                       ),
                     ),
@@ -1190,11 +1341,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(48),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
                           backgroundColor: const Color(0xFF005D9F),
                         ),
                         onPressed: _saveProfile,
-                        child: const Text('Save profile', style: TextStyle(fontSize: 16)),
+                        child: const Text(
+                          'Save profile',
+                          style: TextStyle(fontSize: 16),
+                        ),
                       ),
                     ),
                   ],
@@ -1240,15 +1396,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                                     ],
                             ),
                             child: selected
-                                ? const Icon(Icons.check, color: Colors.white, size: 24)
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.white,
+                                    size: 24,
+                                  )
                                 : null,
                           ),
                         );
                       }),
                     ),
                     const SizedBox(height: 12),
-                    Text('Pick one of 5 colors to personalize the app.',
-                        style: TextStyle(color: Colors.grey[700])),
+                    Text(
+                      'Pick one of 5 colors to personalize the app.',
+                      style: TextStyle(color: Colors.grey[700]),
+                    ),
                   ],
                 ),
               ),
@@ -1269,8 +1431,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       trailing: const Icon(Icons.chevron_right),
                       onTap: () => _openSliderSheet(
                         title: 'Water goal (cups)',
-                        min: 4, max: 16, divisions: 12,
-                        initial: _waterGoal.toDouble(), unit: 'cups',
+                        min: 4,
+                        max: 16,
+                        divisions: 12,
+                        initial: _waterGoal.toDouble(),
+                        unit: 'cups',
                         onChanged: (v) => _waterGoal = v.round(),
                       ),
                     ),
@@ -1280,7 +1445,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: FilledButton(
                         style: FilledButton.styleFrom(
                           minimumSize: const Size.fromHeight(44),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
                         ),
                         onPressed: _saveProfile,
                         child: const Text('Save water goal'),
@@ -1296,7 +1463,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _pickerTile({required String label, required String value, required IconData icon, required VoidCallback onTap}) {
+  Widget _pickerTile({
+    required String label,
+    required String value,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
     return ListTile(
       leading: Icon(icon),
       title: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
@@ -1306,44 +1478,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _sectionTitle(String s) =>
-      Text(s, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800));
+  Widget _sectionTitle(String s) => Text(
+    s,
+    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+  );
 
   Widget _card({required Widget child}) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(26),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(26),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.05),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
         ),
-        child: Padding(padding: const EdgeInsets.all(16), child: child),
-      );
+      ],
+    ),
+    child: Padding(padding: const EdgeInsets.all(16), child: child),
+  );
 
   Widget _glowCard({required Widget child}) => Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.cyanAccent.withOpacity(0.5),
-              blurRadius: 40,
-              spreadRadius: -6,
-              offset: const Offset(0, 18),
-            ),
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(30),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.cyanAccent.withOpacity(0.5),
+          blurRadius: 40,
+          spreadRadius: -6,
+          offset: const Offset(0, 18),
         ),
-        child: Padding(padding: const EdgeInsets.all(16), child: child),
-      );
+        BoxShadow(
+          color: Colors.black.withOpacity(0.06),
+          blurRadius: 8,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    ),
+    child: Padding(padding: const EdgeInsets.all(16), child: child),
+  );
 
   Widget _genderPicker() {
     final items = const ['—', 'Male', 'Female', 'Other'];
@@ -1355,15 +1529,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Text('Gender', style: TextStyle(fontWeight: FontWeight.w700)),
         ),
         DropdownButtonFormField<String>(
-          value: _gender,
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          initialValue: _gender,
+          items: items
+              .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+              .toList(),
           onChanged: (v) => setState(() => _gender = v ?? '—'),
           decoration: InputDecoration(
             filled: true,
             fillColor: Colors.white,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(18)),
             isDense: true,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
           ),
         ),
       ],
@@ -1377,11 +1556,7 @@ class _Gauge extends StatelessWidget {
   final double value; // 0..1
   final int steps;
   final int goal;
-  const _Gauge({
-    required this.value,
-    required this.steps,
-    required this.goal,
-  });
+  const _Gauge({required this.value, required this.steps, required this.goal});
 
   @override
   Widget build(BuildContext context) {
@@ -1490,19 +1665,21 @@ class _AreaChart extends StatelessWidget {
   final List<int> values; // 7 values
   final int goal;
   final Color color;
-  const _AreaChart({required this.values, required this.goal, required this.color});
+  const _AreaChart({
+    required this.values,
+    required this.goal,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final maxVal = ([
-      ...values,
-      goal,
-    ]..sort())
-        .last
-        .toDouble();
+    final maxVal = ([...values, goal]..sort()).last.toDouble();
     final maxY = (maxVal == 0 ? 1000 : maxVal) * 1.3;
 
-    final spots = List.generate(7, (i) => FlSpot(i.toDouble(), values[i].toDouble()));
+    final spots = List.generate(
+      7,
+      (i) => FlSpot(i.toDouble(), values[i].toDouble()),
+    );
     return LineChart(
       LineChartData(
         minX: 0,
@@ -1512,39 +1689,50 @@ class _AreaChart extends StatelessWidget {
         gridData: FlGridData(show: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          topTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
+          rightTitles: const AxisTitles(
+            sideTitles: SideTitles(showTitles: false),
+          ),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
               getTitlesWidget: (v, _) {
-                const labels = ['S','M','T','W','T','F','S'];
+                const labels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
                 final i = v.toInt();
                 if (i < 0 || i > 6) return const SizedBox();
                 return Padding(
                   padding: const EdgeInsets.only(top: 6),
-                  child: Text(labels[i], style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                  child: Text(
+                    labels[i],
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
                 );
               },
             ),
           ),
         ),
         lineTouchData: LineTouchData(enabled: false),
-        extraLinesData: ExtraLinesData(horizontalLines: [
-          HorizontalLine(
-            y: goal.toDouble(),
-            strokeWidth: 2,
-            color: Colors.orangeAccent.withOpacity(0.9),
-            dashArray: const [6, 6],
-            label: HorizontalLineLabel(
-              show: true,
-              alignment: Alignment.topRight,
-              labelResolver: (_) => 'Goal',
-              style: const TextStyle(color: Colors.orange),
+        extraLinesData: ExtraLinesData(
+          horizontalLines: [
+            HorizontalLine(
+              y: goal.toDouble(),
+              strokeWidth: 2,
+              color: Colors.orangeAccent.withOpacity(0.9),
+              dashArray: const [6, 6],
+              label: HorizontalLineLabel(
+                show: true,
+                alignment: Alignment.topRight,
+                labelResolver: (_) => 'Goal',
+                style: const TextStyle(color: Colors.orange),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         lineBarsData: [
           LineChartBarData(
             spots: spots,
@@ -1583,7 +1771,12 @@ class _RingPainter extends CustomPainter {
   final Color bgColor;
   final Color fgColor;
   final double stroke;
-  _RingPainter({required this.progress, required this.bgColor, required this.fgColor, required this.stroke});
+  _RingPainter({
+    required this.progress,
+    required this.bgColor,
+    required this.fgColor,
+    required this.stroke,
+  });
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1611,6 +1804,9 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _RingPainter old) {
-    return old.progress != progress || old.bgColor != bgColor || old.fgColor != fgColor || old.stroke != stroke;
+    return old.progress != progress ||
+        old.bgColor != bgColor ||
+        old.fgColor != fgColor ||
+        old.stroke != stroke;
   }
 }
